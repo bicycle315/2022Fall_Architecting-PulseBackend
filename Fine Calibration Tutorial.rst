@@ -99,3 +99,56 @@ Detecting an over & under rotated pulse
     print(f"Thus, scale the {over_amp:.4f} pulse amplitude by {scale_over:.3f} to obtain {over_amp*scale_over:.5f}.")
     print(f"On the other hand, we measued a deviation of {dtheta_under:.3f} rad in under-rotated pulse case.")
     print(f"Thus, scale the {under_amp:.4f} pulse amplitude by {scale_under:.3f} to obtain {under_amp*scale_under:.5f}.")
+
+-----------------------------------------------------------------------------------
+Analyzing a pi/2 pulse
+-----------------------------------------------------------------------------------
+.. jupyter-execute::
+
+    # build sx_pulse with the default x_pulse from defaults and add it to the InstructionScheduleMap
+    sx_pulse = pulse.Drag(x_pulse.duration, 0.5*x_pulse.amp, x_pulse.sigma, x_pulse.beta, name="SXp_d0")
+    with pulse.build(name='sx') as sched:
+        pulse.play(sx_pulse,d0)
+    inst_map.add("sx", (qubit,), sched)
+
+.. jupyter-execute::
+
+    # do the expeirment
+    amp_cal = FineSXAmplitude(qubit, pulse_backend)
+    amp_cal.set_transpile_options(inst_map=inst_map)
+    exp_data_x90p = amp_cal.run().block_for_results()
+    exp_data_x90p.figure(0)
+
+.. jupyter-execute::
+
+    # check how much more the given sx_pulse makes over or under roatation
+    print(exp_data_x90p.analysis_results("d_theta"))
+    target_angle = np.pi / 2
+    dtheta = exp_data_x90p.analysis_results("d_theta").value.nominal_value
+    scale = target_angle / (target_angle + dtheta)
+    print(f"The ideal angle is {target_angle:.2f} rad. We measured a deviation of {dtheta:.3f} rad.")
+    print(f"Thus, scale the {sx_pulse.amp:.4f} pulse amplitude by {scale:.3f} to obtain {sx_pulse.amp*scale:.5f}.")
+
+Let's change the sx_pulse with the scaled sx_pulse expecting it to make a sharp pi/2 rotation.
+(dtheta~0.000)
+
+.. jupyter-execute::
+
+    pulse_amp = sx_pulse.amp*scale
+
+    with pulse.build(backend=pulse_backend, name="sx") as sx_new:
+        pulse.play(pulse.Drag(x_pulse.duration, pulse_amp, x_pulse.sigma, x_pulse.beta), d0)
+
+    inst_map.add("sx", (qubit,), sx_new)
+    inst_map.get('sx',(qubit,))
+
+.. jupyter-execute::
+
+    # do the experiment
+    data_x90p = amp_cal.run().block_for_results()
+    data_x90p.figure(0)
+
+.. jupyter-execute::
+
+    # check the dtheta 
+    print(data_x90p.analysis_results("d_theta"))
