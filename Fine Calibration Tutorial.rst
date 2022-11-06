@@ -15,7 +15,7 @@ Therefore, fine amplitude calibration experiment which is a typical example of
 containing such repeated gates within a circuit, can be run efficiently in the "IQPulseBackend"
 
 Let's start with importing some necessary modules and build our pulse simulator with
-"SingleTransmonTestBackend"
+"SingleTransmonTestBackend" which is inherited from "IQPulseBackend"
 
 .. jupyter-execute:: 
 
@@ -29,8 +29,6 @@ Let's start with importing some necessary modules and build our pulse simulator 
 
     backend = SingleTransmonTestBackend()
     qubit = 0
-
-
 -----------------------------------------------------
 Fine X gate Amplitude Calibration
 -----------------------------------------------------
@@ -43,11 +41,9 @@ We will base all our pulses on the default X pulse of "SingleTransmonTestBackend
 
 .. jupyter-execute::
     x_pulse = backend.defaults().instruction_schedule_map.get('x', (qubit,)).instructions[0][1].pulse
-    sx_pulse = pulse.Drag(x_pulse.duration, 0.5*x_pulse.amp, x_pulse.sigma, x_pulse.beta, name="SXp_d0")
-    y_pulse = pulse.Drag(x_pulse.duration, 1.0j*x_pulse.amp, x_pulse.sigma, x_pulse.beta, name="Yp_d0")
     d0, inst_map = pulse.DriveChannel(qubit), InstructionScheduleMap()
 
-    for name, pulse_ in [("x", x_pulse), ("y", y_pulse), ("sx", sx_pulse)]:
+    for name, pulse_ in [("x", x_pulse)]:
         with pulse.build(name=name) as sched:
             pulse.play(pulse_, d0)
 
